@@ -105,8 +105,13 @@ def draw_percentage_change(draw, x, y, width, height, first_price, last_price):
 def draw_title(draw, x, y, symbol, stock_name):
     font = load_font(20)
     
-    # Only show symbol for short names
-    text = stock_name if len(stock_name) > 10 else f"{stock_name} [{symbol}]"
+    if len(stock_name) > 16:
+        text = symbol
+    elif len(stock_name) > 10:
+        text = stock_name
+    else:
+        text = f"{stock_name} [{symbol}]"
+    
     draw.text((x, y), text, font=font, fill=0)
 
 
