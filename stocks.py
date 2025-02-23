@@ -152,7 +152,7 @@ def display_on_inky():
                         0, 0, 0,         # Black
                         255, 0, 0))      # Red
 
-    img = img.convert('RGB').quantize(palette)
+    img = img.convert('RGB').quantize(palette=palette)
 
     display.set_border(display.WHITE)
     display.set_image(img)
