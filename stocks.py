@@ -3,9 +3,16 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
-#from inky import InkyPHAT
 from PIL import Image, ImageDraw, ImageFont
 import os
+
+try:
+    from inky import InkyPHAT
+    from inky.auto import auto
+    DISPLAY_AVAILABLE = True
+except ImportError:
+    DISPLAY_AVAILABLE = False
+    print("Warning: Inky pHAT not installed - will save image locally")
 
 WIDTH, HEIGHT = 250, 122 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "Roboto-Bold.ttf")
@@ -49,7 +56,7 @@ def plot_graph(timestamps, prices):
     
     graph = Image.open(temp_path)
     graph = graph.resize((185, 80), Image.Resampling.BOX)
-    return graph.convert('1')
+    return graph
 
 
 def draw_trend_arrow(draw, x, y, width, height, is_up):
@@ -117,7 +124,7 @@ def draw_price(draw, x, y, width, height, price):
 
 
 def create_display_image(symbol, market_data):
-    image = Image.new('1', (WIDTH, HEIGHT), 255)
+    image = Image.new("RGB", (WIDTH, HEIGHT), (255, 255, 255))
     draw = ImageDraw.Draw(image)
     
     col_width = 65
@@ -137,18 +144,24 @@ def create_display_image(symbol, market_data):
 
 
 def display_on_inky():
-    # display = InkyPHAT("black")
-    # img = Image.open("market_graph.png")
-    # display.set_border(inky.BLACK)
-    # display.set_image(img)
-    # display.show()
-    pass
+    display = auto()
+    img = Image.open("market_graph.png")
+
+    palette = Image.new('P', (1, 1))
+    palette.putpalette((255, 255, 255,   # White
+                        0, 0, 0,         # Black
+                        255, 0, 0))      # Red
+
+    img = img.convert('RGB').quantize(palette)
+
+    display.set_border(display.WHITE)
+    display.set_image(img)
+    display.show()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Displays stock market data on a Pimoroni InkyPHAT")
     parser.add_argument("--symbol", type=str, default="^GSPC", help="Stock/Index symbol (default: S&P 500)")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode (save image locally)")
     args = parser.parse_args()
 
     try:
@@ -157,9 +170,8 @@ if __name__ == "__main__":
         
         save_path = "market_graph.png"
         image.save(save_path, format="PNG")
-        
-        if not args.debug:
-            display_on_inky()
-        print(f"Graph for {args.symbol} saved to {save_path}")
+        if DISPLAY_AVAILABLE:
+            display_on_inky() 
+
     except Exception as e:
         print(f"Error: {e}")
