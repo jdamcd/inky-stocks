@@ -160,19 +160,19 @@ def create_display_image(symbol, market_data):
     return image
 
 
-def display_on_inky():
+def display_on_inky(image_path):
     display = auto()
-    img = Image.open("market_graph.png")
+    image = Image.open(image_path)
 
     palette = Image.new('P', (1, 1))
     palette.putpalette((255, 255, 255,   # White
                         0, 0, 0,         # Black
                         255, 0, 0))      # Red
 
-    img = img.convert('RGB').quantize(palette=palette)
+    image = image.convert('RGB').quantize(palette=palette)
 
     display.set_border(display.WHITE)
-    display.set_image(img)
+    display.set_image(image)
     display.show()
 
 
@@ -185,10 +185,13 @@ if __name__ == "__main__":
         market_data = fetch_market_data(args.symbol)
         image = create_display_image(args.symbol, market_data)
         
-        save_path = "market_graph.png"
-        image.save(save_path, format="PNG")
         if DISPLAY_AVAILABLE:
-            display_on_inky() 
+            save_path = "/tmp/inky_stocks_screen.png"
+            image.save(save_path, format="PNG")
+            display_on_inky(save_path)
+        else:
+            save_path = "inky_stocks.png"
+            image.save(save_path, format="PNG")
 
     except Exception as e:
         print(f"Error: {e}")
