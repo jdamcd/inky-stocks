@@ -3,9 +3,9 @@
 A stock ticker for Raspberry Pi Zero & Pimoroni Inky pHAT, using the Yahoo Finance API to display daily stock performance.
 
 - Choose any symbol on Yahoo Finance 
-- Displays the last day available if the market is closed
+- Displays the most recent day if the market is closed
 - Works for 24/7 symbols like BTC-USD
-- Graphs part of the previous day trend if the market hasn't been open long
+- Graphs the end of the previous day if the market hasn't been open long
 
 ![Output on the Inky pHAT](readme-img/photo.jpeg)
 
