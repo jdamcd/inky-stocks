@@ -22,29 +22,39 @@ def fetch_market_data(symbol):
     ticker = yf.Ticker(symbol)
     stock_name = ticker.info.get('shortName', symbol)
     
-    # Get 3 days to ensure we have the last trading session
+    # Get 4 days to cover weekends
     end_time = datetime.now()
-    start_time = end_time - timedelta(days=3)
+    start_time = end_time - timedelta(days=4)
     
     data = yf.download(symbol, start=start_time, end=end_time, interval="15m", auto_adjust=True)
     if data.empty:
         raise ValueError(f"No market data available for {symbol}.")
     
-    # Most recent day data
     data['date'] = data.index.date
-    last_day = data.index.date.max()
-    data = data[data['date'] == last_day]
+    latest_day = data.index.date.max()
+    latest_day_data = data[data['date'] == latest_day]
+    
+    if len(latest_day_data) <= 8:
+        previous_day_data = data[data['date'] < latest_day].tail(16)
+        data = pd.concat([previous_day_data, latest_day_data])
+    else:
+        data = latest_day_data
     
     return {
         'name': stock_name,
         'times': data.index.strftime("%H:%M").tolist(),
-        'prices': data["Close"].values.flatten().tolist()
+        'prices': data["Close"].values.flatten().tolist(),
+        'latest_day_index': len(data) - len(latest_day_data)
     }
 
 
-def plot_graph(timestamps, prices):
+def plot_graph(prices, latest_day_index):
     plt.figure(figsize=(1.85, 0.8), dpi=100)
-    plt.plot(timestamps, prices, color="black", linewidth=2)
+    plt.plot(range(len(prices)), prices, color="black", linewidth=2)
+    
+    if latest_day_index > 0:
+        plt.axvline(x=latest_day_index, color='black', linestyle='--', linewidth=1)
+    
     plt.xticks([])
     plt.yticks([])
     plt.box(False)
@@ -61,7 +71,7 @@ def plot_graph(timestamps, prices):
 
 def draw_trend_arrow(draw, x, y, width, height, is_up):
     padding = 8
-    arrow_size = min(width - (padding * 2), height - (padding * 2))  # Use smaller dimension
+    arrow_size = min(width - (padding * 2), height - (padding * 2))
     x_offset = (width - arrow_size) // 2
     y_offset = (height - arrow_size) // 2
     
@@ -137,13 +147,15 @@ def create_display_image(symbol, market_data):
     col_x = WIDTH - col_width
 
     prices = market_data['prices']
+    latest_day_index = market_data['latest_day_index']
+    latest_day = prices[latest_day_index:]
     
     draw_title(draw, 8, 8, symbol, market_data['name'])
-    draw_trend_arrow(draw, col_x, 0, col_width, col_height, prices[-1] > prices[0])
-    draw_percentage_change(draw, col_x, col_height, col_width, col_height, prices[0], prices[-1])
-    draw_price(draw, col_x, col_height*2, col_width, col_height, prices[-1])
+    draw_trend_arrow(draw, col_x, 0, col_width, col_height, latest_day[-1] > latest_day[0])
+    draw_percentage_change(draw, col_x, col_height, col_width, col_height, latest_day[0], latest_day[-1])
+    draw_price(draw, col_x, col_height*2, col_width, col_height, latest_day[-1])
     
-    graph = plot_graph(market_data['times'], prices)
+    graph = plot_graph(prices, latest_day_index)
     image.paste(graph, (0, col_height))
     return image
 
