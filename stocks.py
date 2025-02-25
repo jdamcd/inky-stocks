@@ -14,6 +14,12 @@ except ImportError:
     DISPLAY_AVAILABLE = False
     print("Warning: Inky pHAT not installed - will save image locally")
 
+try:
+    import ledshim
+    LEDS_AVAILABLE = True
+except ImportError:
+    LEDS_AVAILABLE = False
+
 WIDTH, HEIGHT = 250, 122 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "Roboto-Bold.ttf")
 
@@ -176,6 +182,17 @@ def display_on_inky(image_path):
     display.show()
 
 
+def set_lights(market_data):
+    latest_day = market_data['prices'][market_data['latest_day_index']:]
+    
+    if latest_day[-1] > latest_day[0]:
+        ledshim.set_all(0, 255, 0, 0.5)
+    else:
+        ledshim.set_all(255, 0, 0, 0.5)
+    ledshim.set_clear_on_exit(False)
+    ledshim.show()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Displays stock market data on a Pimoroni InkyPHAT")
     parser.add_argument("--symbol", type=str, default="^GSPC", help="Stock/Index symbol (default: S&P 500)")
@@ -192,6 +209,9 @@ if __name__ == "__main__":
         else:
             save_path = "inky_stocks.png"
             image.save(save_path, format="PNG")
+
+        if LEDS_AVAILABLE:
+            set_lights(market_data)
 
     except Exception as e:
         print(f"Error: {e}")
