@@ -72,6 +72,7 @@ def plot_graph(prices, latest_day_index):
     
     graph = Image.open(temp_path)
     graph = graph.resize((185, 80), Image.Resampling.BOX)
+    os.remove(temp_path)
     return graph
 
 
@@ -166,9 +167,8 @@ def create_display_image(symbol, market_data):
     return image
 
 
-def display_on_inky(image_path):
+def display_on_inky(image):
     display = auto()
-    image = Image.open(image_path)
 
     palette = Image.new('P', (1, 1))
     palette.putpalette((255, 255, 255,   # White
@@ -200,15 +200,12 @@ if __name__ == "__main__":
 
     try:
         market_data = fetch_market_data(args.symbol)
-        image = create_display_image(args.symbol, market_data)
+        screen = create_display_image(args.symbol, market_data)
         
         if DISPLAY_AVAILABLE:
-            save_path = "/tmp/inky_stocks_screen.png"
-            image.save(save_path, format="PNG")
-            display_on_inky(save_path)
+            display_on_inky(screen)
         else:
-            save_path = "inky_stocks.png"
-            image.save(save_path, format="PNG")
+            screen.save("inky_stocks.png", format="PNG")
 
         if LEDS_AVAILABLE:
             set_lights(market_data)
