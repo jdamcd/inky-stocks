@@ -23,6 +23,12 @@ except ImportError:
 WIDTH, HEIGHT = 250, 122 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "Roboto-Bold.ttf")
 
+class Config:
+    def __init__(self):
+        self.three_color = False
+
+config = Config()
+
 
 def fetch_market_data(symbol):
     ticker = yf.Ticker(symbol)
@@ -56,7 +62,58 @@ def fetch_market_data(symbol):
 
 def plot_graph(prices, latest_day_index):
     plt.figure(figsize=(1.85, 0.8), dpi=100)
-    plt.plot(range(len(prices)), prices, color="black", linewidth=2)
+    
+    if latest_day_index < len(prices):
+        start_price = prices[latest_day_index]
+        
+        def draw_negative_segments(price_data, base_index=0):
+            for i in range(len(price_data) - 1):
+                x_start = base_index + i
+                x_end = base_index + i + 1
+                
+                # Skip if prices are identical to avoid division by zero
+                if price_data[i] == price_data[i+1]:
+                    if price_data[i] < start_price:
+                        plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=2)
+                    continue
+                
+                # Both points below start, full red segment
+                if price_data[i] < start_price and price_data[i+1] < start_price:
+                    plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=2)
+                
+                # Crossing start price, partial red segment
+                elif price_data[i] < start_price and price_data[i+1] >= start_price:
+                    ratio = (start_price - price_data[i]) / (price_data[i+1] - price_data[i])
+                    x_intersect = x_start + ratio
+                    plt.plot([x_start, x_intersect], [price_data[i], start_price], color='red', linewidth=2)
+                
+                # Opposite direction
+                elif price_data[i] >= start_price and price_data[i+1] < start_price:
+                    ratio = (start_price - price_data[i]) / (price_data[i+1] - price_data[i])
+                    x_intersect = x_start + ratio
+                    plt.plot([x_intersect, x_end], [start_price, price_data[i+1]], color='red', linewidth=2)
+        
+        if latest_day_index > 0:
+            # Plot previous day
+            plt.plot(range(latest_day_index), prices[:latest_day_index], color='black', linewidth=2)
+            
+            latest_prices = prices[latest_day_index:]
+        
+            # Plot latest day
+            if config.three_color:
+                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=2)
+                draw_negative_segments(latest_prices, latest_day_index)
+            else:
+                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=2)
+        else:
+            # Plot latest day only
+            if config.three_color:
+                plt.plot(range(len(prices)), prices, color='black', linewidth=2)
+                draw_negative_segments(prices)
+            else:
+                plt.plot(range(len(prices)), prices, color='black', linewidth=2)
+    else:
+        plt.plot(range(len(prices)), prices, color='black', linewidth=2)
     
     if latest_day_index > 0:
         plt.axvline(x=latest_day_index, color='black', linestyle='--', linewidth=1)
@@ -88,13 +145,15 @@ def draw_trend_arrow(draw, x, y, width, height, is_up):
             (x + x_offset, y + y_offset + arrow_size),
             (x + x_offset + arrow_size, y + y_offset + arrow_size)
         ]
+        fill_color = (0, 0, 0)
     else:
         points = [
             (x + x_offset, y + y_offset),
             (x + x_offset + arrow_size, y + y_offset),
             (x + x_offset + arrow_size//2, y + y_offset + arrow_size)
         ]
-    draw.polygon(points, fill=0)
+        fill_color = (255, 0, 0) if config.three_color else (0, 0, 0)
+    draw.polygon(points, fill=fill_color)
 
 
 def load_font(size):
@@ -116,7 +175,8 @@ def draw_percentage_change(draw, x, y, width, height, first_price, last_price):
     
     text_x = x + (width - text_width) // 2
     text_y = y + (height - text_height) // 2
-    draw.text((text_x, text_y), text, font=font, fill=0)
+        
+    draw.text((text_x, text_y), text, font=font, fill=(0, 0, 0))
 
 
 def draw_title(draw, x, y, symbol, stock_name):
@@ -129,7 +189,7 @@ def draw_title(draw, x, y, symbol, stock_name):
     else:
         text = f"{stock_name} [{symbol}]"
     
-    draw.text((x, y), text, font=font, fill=0)
+    draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
 
 def draw_price(draw, x, y, width, height, price):
@@ -142,7 +202,7 @@ def draw_price(draw, x, y, width, height, price):
     
     text_x = x + (width - text_width) // 2
     text_y = y + (height - text_height) // 2
-    draw.text((text_x, text_y), price_text, font=font, fill=0)
+    draw.text((text_x, text_y), price_text, font=font, fill=(0, 0, 0))
 
 
 def create_display_image(symbol, market_data):
@@ -186,9 +246,9 @@ def set_lights(market_data):
     latest_day = market_data['prices'][market_data['latest_day_index']:]
     
     if latest_day[-1] > latest_day[0]:
-        ledshim.set_all(0, 255, 0, 0.5)
+        ledshim.set_all(0, 255, 0)
     else:
-        ledshim.set_all(255, 0, 0, 0.5)
+        ledshim.set_all(255, 0, 0)
     ledshim.set_clear_on_exit(False)
     ledshim.show()
 
@@ -196,7 +256,10 @@ def set_lights(market_data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Displays stock market data on a Pimoroni InkyPHAT")
     parser.add_argument("--symbol", type=str, default="^GSPC", help="Stock/Index symbol (default: S&P 500)")
+    parser.add_argument("--three-color", action="store_true", 
+                        help="Enable black/white/red display (default: black/white)")
     args = parser.parse_args()
+    config.three_color = args.three_color
 
     try:
         market_data = fetch_market_data(args.symbol)
