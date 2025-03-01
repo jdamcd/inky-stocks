@@ -12,7 +12,7 @@ try:
     DISPLAY_AVAILABLE = True
 except ImportError:
     DISPLAY_AVAILABLE = False
-    print("Warning: Inky pHAT not installed - will save image locally")
+    print("Warning: Inky pHAT not installed... saving image locally")
 
 try:
     import ledshim
@@ -32,7 +32,9 @@ config = Config()
 
 def fetch_market_data(symbol):
     ticker = yf.Ticker(symbol)
-    stock_name = ticker.info.get('shortName', symbol)
+    stock_name = ticker.info.get('displayName') or ticker.info.get('shortName', symbol)
+    if isinstance(stock_name, str):
+        stock_name = stock_name.strip()
     
     # Get 4 days to cover weekends
     end_time = datetime.now()
@@ -71,7 +73,7 @@ def plot_graph(prices, latest_day_index):
                 x_start = base_index + i
                 x_end = base_index + i + 1
                 
-                # Skip if prices are identical to avoid division by zero
+                # Special case for consecutive identical prices to avoid divide by zero
                 if price_data[i] == price_data[i+1]:
                     if price_data[i] < start_price:
                         plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=2)
@@ -136,7 +138,8 @@ def plot_graph(prices, latest_day_index):
 def draw_trend_arrow(draw, x, y, width, height, is_up):
     padding = 8
     arrow_size = min(width - (padding * 2), height - (padding * 2))
-    x_offset = (width - arrow_size) // 2
+    
+    x_offset = width - arrow_size - (padding + 2)
     y_offset = (height - arrow_size) // 2
     
     if is_up:
@@ -166,14 +169,19 @@ def load_font(size):
 
 def draw_percentage_change(draw, x, y, width, height, first_price, last_price):
     percent_change = ((last_price - first_price) / first_price) * 100
-    text = f"{'+' if percent_change >= 0 else ''}{percent_change:.1f}%"
+    
+    if abs(percent_change) >= 10:
+        text = f"{'+' if percent_change >= 0 else ''}{int(percent_change)}%"
+    else:
+        text = f"{'+' if percent_change >= 0 else ''}{percent_change:.1f}%"
     
     font = load_font(20)
     text_bbox = draw.textbbox((0, 0), text, font=font)
     text_width = text_bbox[2] - text_bbox[0]
     text_height = text_bbox[3] - text_bbox[1]
     
-    text_x = x + (width - text_width) // 2
+    right_margin = 6
+    text_x = x + width - text_width - right_margin
     text_y = y + (height - text_height) // 2
         
     draw.text((text_x, text_y), text, font=font, fill=(0, 0, 0))
@@ -200,8 +208,10 @@ def draw_price(draw, x, y, width, height, price):
     text_width = text_bbox[2] - text_bbox[0]
     text_height = text_bbox[3] - text_bbox[1]
     
-    text_x = x + (width - text_width) // 2
+    right_margin = 6  
+    text_x = x + width - text_width - right_margin
     text_y = y + (height - text_height) // 2
+
     draw.text((text_x, text_y), price_text, font=font, fill=(0, 0, 0))
 
 
@@ -262,8 +272,9 @@ if __name__ == "__main__":
     config.three_color = args.three_color
 
     try:
-        market_data = fetch_market_data(args.symbol)
-        screen = create_display_image(args.symbol, market_data)
+        symbol = args.symbol.upper()
+        market_data = fetch_market_data(symbol)
+        screen = create_display_image(symbol, market_data)
         
         if DISPLAY_AVAILABLE:
             display_on_inky(screen)
