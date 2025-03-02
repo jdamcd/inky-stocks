@@ -140,6 +140,27 @@ def plot_graph(prices, latest_day_index):
     return graph
 
 
+def load_font(size):
+    try:
+        return ImageFont.truetype(FONT_PATH, size)
+    except:
+        print("Warning: Could not load Roboto font, using default")
+        return ImageFont.load_default()
+
+
+def draw_title(draw, x, y, symbol, stock_name):
+    font = load_font(20)
+    
+    if len(stock_name) > 16:
+        text = symbol
+    elif len(stock_name) > 10:
+        text = stock_name
+    else:
+        text = f"{stock_name} ({symbol})"
+    
+    draw.text((x, y), text, font=font, fill=(0, 0, 0))
+
+
 def draw_trend_arrow(draw, x, y, width, height, is_up):
     padding = 8
     arrow_size = min(width - (padding * 2), height - (padding * 2))
@@ -164,14 +185,6 @@ def draw_trend_arrow(draw, x, y, width, height, is_up):
     draw.polygon(points, fill=fill_color)
 
 
-def load_font(size):
-    try:
-        return ImageFont.truetype(FONT_PATH, size)
-    except:
-        print("Warning: Could not load Roboto font, using default")
-        return ImageFont.load_default()
-
-
 def draw_percentage_change(draw, x, y, width, height, first_price, last_price):
     percent_change = ((last_price - first_price) / first_price) * 100
     
@@ -190,19 +203,6 @@ def draw_percentage_change(draw, x, y, width, height, first_price, last_price):
     text_y = y + (height - text_height) // 2
         
     draw.text((text_x, text_y), text, font=font, fill=(0, 0, 0))
-
-
-def draw_title(draw, x, y, symbol, stock_name):
-    font = load_font(20)
-    
-    if len(stock_name) > 16:
-        text = symbol
-    elif len(stock_name) > 10:
-        text = stock_name
-    else:
-        text = f"{stock_name} [{symbol}]"
-    
-    draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
 
 def draw_price(draw, x, y, width, height, price):
