@@ -65,6 +65,11 @@ def fetch_market_data(symbol):
 def plot_graph(prices, latest_day_index):
     plt.figure(figsize=(1.85, 0.8), dpi=100)
     
+    # Don't anti-alias since we're drawing for e-ink
+    plt.rcParams['lines.antialiased'] = False
+    plt.rcParams['patch.antialiased'] = False
+    line_width = 1
+    
     if latest_day_index < len(prices):
         start_price = prices[latest_day_index]
         
@@ -76,49 +81,49 @@ def plot_graph(prices, latest_day_index):
                 # Special case for consecutive identical prices to avoid divide by zero
                 if price_data[i] == price_data[i+1]:
                     if price_data[i] < start_price:
-                        plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=2)
+                        plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=line_width)
                     continue
                 
                 # Both points below start, full red segment
                 if price_data[i] < start_price and price_data[i+1] < start_price:
-                    plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=2)
+                    plt.plot([x_start, x_end], [price_data[i], price_data[i+1]], color='red', linewidth=line_width)
                 
                 # Crossing start price, partial red segment
                 elif price_data[i] < start_price and price_data[i+1] >= start_price:
                     ratio = (start_price - price_data[i]) / (price_data[i+1] - price_data[i])
                     x_intersect = x_start + ratio
-                    plt.plot([x_start, x_intersect], [price_data[i], start_price], color='red', linewidth=2)
+                    plt.plot([x_start, x_intersect], [price_data[i], start_price], color='red', linewidth=line_width)
                 
                 # Opposite direction
                 elif price_data[i] >= start_price and price_data[i+1] < start_price:
                     ratio = (start_price - price_data[i]) / (price_data[i+1] - price_data[i])
                     x_intersect = x_start + ratio
-                    plt.plot([x_intersect, x_end], [start_price, price_data[i+1]], color='red', linewidth=2)
+                    plt.plot([x_intersect, x_end], [start_price, price_data[i+1]], color='red', linewidth=line_width)
         
         if latest_day_index > 0:
             # Plot previous day
-            plt.plot(range(latest_day_index), prices[:latest_day_index], color='black', linewidth=2)
+            plt.plot(range(latest_day_index), prices[:latest_day_index], color='black', linewidth=line_width)
             
             latest_prices = prices[latest_day_index:]
         
             # Plot latest day
             if config.three_color:
-                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=2)
+                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=line_width)
                 draw_negative_segments(latest_prices, latest_day_index)
             else:
-                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=2)
+                plt.plot(range(latest_day_index, len(prices)), latest_prices, color='black', linewidth=line_width)
         else:
             # Plot latest day only
             if config.three_color:
-                plt.plot(range(len(prices)), prices, color='black', linewidth=2)
+                plt.plot(range(len(prices)), prices, color='black', linewidth=line_width)
                 draw_negative_segments(prices)
             else:
-                plt.plot(range(len(prices)), prices, color='black', linewidth=2)
+                plt.plot(range(len(prices)), prices, color='black', linewidth=line_width)
     else:
-        plt.plot(range(len(prices)), prices, color='black', linewidth=2)
+        plt.plot(range(len(prices)), prices, color='black', linewidth=line_width)
     
     if latest_day_index > 0:
-        plt.axvline(x=latest_day_index, color='black', linestyle='--', linewidth=1)
+        plt.axvline(x=latest_day_index, color='black', linestyle='--', linewidth=line_width)
     
     plt.xticks([])
     plt.yticks([])
