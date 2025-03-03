@@ -102,7 +102,7 @@ def plot_graph(prices, latest_day_index):
         
         if latest_day_index > 0:
             # Plot previous day
-            plt.plot(range(latest_day_index), prices[:latest_day_index], color='black', linewidth=line_width)
+            plt.plot(range(latest_day_index + 1), prices[:latest_day_index + 1], color='black', linewidth=line_width)
             
             latest_prices = prices[latest_day_index:]
         
