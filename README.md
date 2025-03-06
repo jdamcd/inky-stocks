@@ -9,7 +9,7 @@ A stock ticker for the Raspberry Pi Zero & Pimoroni Inky pHAT, fetching daily st
 
 ![Output on the Inky pHAT](readme-img/photo.jpg)
 
-Optionally, if you install the Pimoroni LED SHIM, it will light up green or red depending on whether the stock value is up or down.
+Optionally, if you install the Pimoroni LED SHIM, it will light up green or red depending on whether the selected symbol is up or down.
 
 ## Setup
 

@@ -233,8 +233,9 @@ def create_display_image(symbol, market_data):
     latest_day = prices[latest_day_index:]
     
     draw_title(draw, 8, 8, symbol, market_data['name'])
-    draw_trend_arrow(draw, col_x, 0, col_width, col_height, latest_day[-1] > latest_day[0])
-    draw_percentage_change(draw, col_x, col_height, col_width, col_height, latest_day[0], latest_day[-1])
+    if len(latest_day) > 1:
+        draw_trend_arrow(draw, col_x, 0, col_width, col_height, latest_day[-1] > latest_day[0])
+        draw_percentage_change(draw, col_x, col_height, col_width, col_height, latest_day[0], latest_day[-1])
     draw_price(draw, col_x, col_height*2, col_width, col_height, latest_day[-1])
     
     graph = plot_graph(prices, latest_day_index)
