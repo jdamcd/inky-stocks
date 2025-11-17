@@ -131,13 +131,15 @@ def plot_graph(prices, latest_day_index):
     plt.tight_layout(pad=0.1)
 
     temp_path = "/tmp/inky_stocks_graph.png"
-    plt.savefig(temp_path, dpi=100, bbox_inches="tight", pad_inches=0, transparent=False)
-    plt.close()
-    
-    graph = Image.open(temp_path)
-    graph = graph.resize((185, 80), Image.Resampling.BOX)
-    os.remove(temp_path)
-    return graph
+    try:
+        plt.savefig(temp_path, dpi=100, bbox_inches="tight", pad_inches=0, transparent=False)
+        plt.close()
+        graph = Image.open(temp_path)
+        graph = graph.resize((185, 80), Image.Resampling.BOX)
+        return graph
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 def load_font(size):
