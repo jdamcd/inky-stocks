@@ -29,10 +29,12 @@ ROW_PADDING = 12
 CONTENT_WIDTH = WIDTH - (ROW_PADDING * 2)        # 376px
 CONTENT_HEIGHT = ROW_HEIGHT - (ROW_PADDING * 2)  # 75px
 
-GRAPH_WIDTH = 150  # ~40% of content width
+GRAPH_WIDTH = 125  # ~33% of content width
 GRAPH_HEIGHT = CONTENT_HEIGHT
-TITLE_HEIGHT = 26
+TITLE_SIZE = 22
+INFO_SIZE = 20
 ARROW_SIZE = 24
+OFFSET = 4        
 
 # Hardware availability
 try:
@@ -44,8 +46,8 @@ except ImportError:
 
 
 def draw_title(draw, x, y, symbol, stock_name):
-    font = load_font(22)
-    max_length = 18
+    font = load_font(TITLE_SIZE)
+    max_length = 21
 
     full_text = f"{stock_name} ({symbol})"
     if len(full_text) <= max_length:
@@ -84,12 +86,12 @@ def draw_percentage_change(draw, x, y, first_price, last_price):
     else:
         text = f"{'+' if percent_change >= 0 else ''}{percent_change:.1f}%"
 
-    font = load_font(20)
+    font = load_font(INFO_SIZE)
     draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
 
 def draw_price(draw, x, y, price):
-    font = load_font(20)
+    font = load_font(INFO_SIZE)
     price_text = f"{price:.0f}" if price >= 10000 else f"{price:.2f}"
     draw.text((x, y), price_text, font=font, fill=(0, 0, 0))
 
@@ -98,22 +100,23 @@ def create_stock_row(symbol, market_data):
     row_image = Image.new("RGB", (WIDTH, ROW_HEIGHT), (255, 255, 255))
     draw = ImageDraw.Draw(row_image)
 
-    # Title top left 
-    draw_title(draw, ROW_PADDING, ROW_PADDING, symbol, market_data['name'])
+    # Title top left
+    title_pos = ROW_PADDING + OFFSET
+    draw_title(draw, title_pos, title_pos, symbol, market_data['name'])
 
     # Row with arrow, percentage change, and price below title
-    info_y = ROW_PADDING + TITLE_HEIGHT + 4
-    arrow_x = ROW_PADDING
-    text_x = arrow_x + ARROW_SIZE + 16
+    info_y = title_pos + TITLE_SIZE
+    arrow_x = ROW_PADDING + OFFSET
+    text_x = arrow_x + ARROW_SIZE + (OFFSET * 4)
 
-    remaining_height = CONTENT_HEIGHT - TITLE_HEIGHT - 4
-    arrow_y = info_y + (remaining_height - ARROW_SIZE) // 2
+    remaining_height = CONTENT_HEIGHT - TITLE_SIZE - OFFSET
+    arrow_y = info_y + ((remaining_height - ARROW_SIZE) // 2) + OFFSET
+    text_y = arrow_y + ARROW_SIZE - INFO_SIZE + 2 # Visually align to bottom of arrow
+
     draw_trend_arrow(draw, arrow_x, arrow_y, market_data['is_up'])
-
-    text_y = info_y + (remaining_height - 20) // 2
     draw_percentage_change(draw, text_x, text_y,
                           market_data['first_price'], market_data['last_price'])
-    draw_price(draw, text_x + 70, text_y, market_data['last_price'])
+    draw_price(draw, text_x + (OFFSET * 18), text_y, market_data['last_price'])
 
     # Graph to right of content area
     graph = plot_graph(market_data['prices'], market_data['latest_day_index'],
