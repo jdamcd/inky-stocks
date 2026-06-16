@@ -12,6 +12,7 @@ from stocks_common import (
     config,
     display_on_inky,
     fetch_market_data,
+    fit_title_text,
     load_font,
     plot_graph,
 )
@@ -26,6 +27,7 @@ GRAPH_WIDTH = 185
 GRAPH_HEIGHT = 80
 INFO_PANEL_WIDTH = 65
 TITLE_HEIGHT = 40
+TITLE_TOP_PAD = 3
 
 # Hardware availability
 try:
@@ -44,16 +46,9 @@ except ImportError:
 
 def draw_title(draw, x, y, symbol, stock_name):
     font = load_font(20)
-    max_length = 16
-
-    full_text = f"{stock_name} ({symbol})"
-    if len(full_text) <= max_length:
-        text = full_text
-    elif len(stock_name) <= max_length:
-        text = stock_name
-    else:
-        text = symbol
-
+    # Keep the title clear of the info panel on the right
+    max_width = (WIDTH - INFO_PANEL_WIDTH) - x - 6
+    text = fit_title_text(draw, font, max_width, symbol, stock_name)
     draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
 
@@ -121,7 +116,7 @@ def create_display_image(symbol, market_data):
     draw = ImageDraw.Draw(image)
 
     # Title top left
-    draw_title(draw, 8, 8, symbol, market_data['name'])
+    draw_title(draw, 8, 8 + TITLE_TOP_PAD, symbol, market_data['name'])
 
     # Info panel on the right - vertical layout (3 rows)
     info_x = WIDTH - INFO_PANEL_WIDTH

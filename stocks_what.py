@@ -12,6 +12,7 @@ from stocks_common import (
     config,
     display_on_inky,
     fetch_multiple,
+    fit_title_text,
     load_font,
     plot_graph,
 )
@@ -31,10 +32,11 @@ CONTENT_HEIGHT = ROW_HEIGHT - (ROW_PADDING * 2)  # 75px
 
 GRAPH_WIDTH = 125  # ~33% of content width
 GRAPH_HEIGHT = CONTENT_HEIGHT
-TITLE_SIZE = 22
+TITLE_SIZE = 20
 INFO_SIZE = 20
 ARROW_SIZE = 24
-OFFSET = 4        
+OFFSET = 4
+TITLE_TOP_PAD = 3
 
 # Hardware availability
 try:
@@ -47,16 +49,9 @@ except ImportError:
 
 def draw_title(draw, x, y, symbol, stock_name):
     font = load_font(TITLE_SIZE)
-    max_length = 21
-
-    full_text = f"{stock_name} ({symbol})"
-    if len(full_text) <= max_length:
-        text = full_text
-    elif len(stock_name) <= max_length:
-        text = stock_name
-    else:
-        text = symbol
-
+    # Keep the title clear of the graph on the right
+    max_width = (WIDTH - GRAPH_WIDTH - ROW_PADDING) - x - OFFSET
+    text = fit_title_text(draw, font, max_width, symbol, stock_name)
     draw.text((x, y), text, font=font, fill=(0, 0, 0))
 
 
@@ -102,7 +97,7 @@ def create_stock_row(symbol, market_data):
 
     # Title top left
     title_pos = ROW_PADDING + OFFSET
-    draw_title(draw, title_pos, title_pos, symbol, market_data['name'])
+    draw_title(draw, title_pos, title_pos + TITLE_TOP_PAD, symbol, market_data['name'])
 
     # Row with arrow, percentage change, and price below title
     info_y = title_pos + TITLE_SIZE

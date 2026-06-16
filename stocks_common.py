@@ -12,7 +12,16 @@ import yfinance as yf
 from PIL import Image, ImageFont
 
 
-FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "Roboto-Bold.ttf")
+FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
+
+# Adobe Helvetica bitmap strikes (1-bit, no anti-aliasing) render crisply on
+# e-ink after the 3-color quantize in display_on_inky(). Each logical size the
+# display code requests maps to the nearest available strike and its real pixel
+# size (e.g. 16 -> a 17px strike); FreeType must be given the strike's true size.
+BITMAP_FONTS = {
+    16: ("helvB-17.bdf", 17),
+    20: ("helvB-20.bdf", 20),
+}
 
 
 class Config:
@@ -93,13 +102,40 @@ def _prepare_market_data(market_data):
     return market_data
 
 
+_font_cache = {}
+
+
 def load_font(size):
-    """Load Roboto Bold font at specified size, falling back to default if unavailable."""
-    try:
-        return ImageFont.truetype(FONT_PATH, size)
-    except:
-        print("Warning: Could not load Roboto font, using default")
+    """Load the nearest Helvetica bitmap strike for the given size (cached), falling back to default."""
+    if size in _font_cache:
+        return _font_cache[size]
+
+    entry = BITMAP_FONTS.get(size)
+    if entry is None:
+        print(f"Warning: no bitmap strike mapped for size {size}, using default")
         return ImageFont.load_default()
+
+    filename, pixel_size = entry
+    try:
+        font = ImageFont.truetype(os.path.join(FONTS_DIR, filename), pixel_size)
+    except Exception:
+        print(f"Warning: could not load bitmap font {filename}, using default")
+        font = ImageFont.load_default()
+
+    _font_cache[size] = font
+    return font
+
+
+def fit_title_text(draw, font, max_width, symbol, stock_name):
+    """Pick the most complete title that fits in max_width: "Name (SYM)" -> name -> symbol."""
+    def width(text):
+        bbox = draw.textbbox((0, 0), text, font=font)
+        return bbox[2] - bbox[0]
+
+    for candidate in (f"{stock_name} ({symbol})", stock_name):
+        if width(candidate) <= max_width:
+            return candidate
+    return symbol
 
 
 def plot_graph(prices, latest_day_index, graph_width, graph_height, three_color=False):

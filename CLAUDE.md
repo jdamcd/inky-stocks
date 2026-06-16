@@ -85,7 +85,7 @@ reset_leds.py     - Utility to turn off the LED SHIM
 
 **Configuration:**
 - `Config`: Global config object holding `three_color` flag
-- `FONT_PATH`: Path to Roboto-Bold.ttf font
+- `BITMAP_FONTS`: Maps each logical size requested by the display code to an Adobe Helvetica bitmap strike (`fonts/helvB-*.bdf`) and its real pixel size
 
 **Data Fetching:**
 - `fetch_market_data(symbol)`: Fetches 15-minute interval data from Yahoo Finance. Returns prepared dict with name, times, prices, latest_day_index, is_up, first_price, last_price.
@@ -93,7 +93,7 @@ reset_leds.py     - Utility to turn off the LED SHIM
 
 **Rendering:**
 - `plot_graph(prices, latest_day_index, graph_width, graph_height, three_color)`: Uses matplotlib to generate price chart. Handles three-color mode by drawing red segments for prices below starting price.
-- `load_font(size)`: Loads Roboto Bold font at specified size with fallback to default.
+- `load_font(size)`: Loads the Adobe Helvetica bitmap strike for the given size, with fallback to default.
 - `display_on_inky(image)`: Quantizes image to 3-color palette and sends to Inky display.
 
 ### stocks_phat.py - pHAT Display (250x122)
@@ -137,7 +137,8 @@ reset_leds.py     - Utility to turn off the LED SHIM
 - Without LED SHIM library: skips LED functionality
 
 **Font:**
-- Uses Roboto-Bold.ttf from `fonts/` directory
+- Uses the Adobe Helvetica bitmap font (`fonts/helvB-*.bdf`) — 1-bit BDF strikes that render
+  crisply on e-ink. Title truncation fits by measured pixel width, not character count.
 
 ## Hardware Dependencies
 
